@@ -6,14 +6,13 @@ import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
-
-func handle_auth(w rest.ResponseWriter, r *rest.Request) {
-	w.WriteJson(map[string]string{"authed": r.Env["REMOTE_USER"].(string)})
-}
 
 type User struct {
 	gorm.Model
@@ -29,7 +28,13 @@ type Impl struct {
 
 func (i *Impl) InitDB() {
 	var err error
-	i.DB, err = gorm.Open("postgres", "host=localhost user=postgres dbname=taguro sslmode=disable password=postgres")
+	hostname := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	database := os.Getenv("POSTGRES_DATABASE")
+	uri := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, hostname, port, database)
+	i.DB, err = gorm.Open("postgres", uri)
 	if err != nil {
 		log.Fatalf("Got error when connect database, the error is '%v'", err)
 	}
@@ -106,13 +111,23 @@ func (i *Impl) DeleteUser(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func main() {
+func SetCors(api *rest.Api, allow_origin string) {
+	api.Use(&rest.CorsMiddleware{
+		RejectNonCorsRequests: false,
+		OriginValidator: func(origin string, request *rest.Request) bool {
+			return origin == allow_origin
+		},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders: []string{
+			"Accept", "Content-Type", "X-Custom-Header", "Origin"},
+		AccessControlAllowCredentials: true,
+		AccessControlMaxAge:           3600,
+	})
+}
 
-	i := Impl{}
-	i.InitDB()
-	i.InitSchema()
+func GenerateJwtMiddleware(i *Impl) *jwt.JWTMiddleware {
 
-	jwt_middleware := &jwt.JWTMiddleware{
+	return &jwt.JWTMiddleware{
 		Key:        []byte("secret key"),
 		Realm:      "jwt auth",
 		Timeout:    time.Hour,
@@ -120,62 +135,71 @@ func main() {
 		Authenticator: func(username string, password string) bool {
 			var user User
 			if err := i.DB.Where(&User{Username: username, Password: password}).First(&user).Error; err != nil {
-				fmt.Println("Error: Not found user record")
+				log.Println("[Auth] unknown user")
 				return false
 			}
-			if user.Enabled {
-				fmt.Println("Enabled = true")
-				user.LastUseAt = time.Now()
-				if err := i.DB.Save(&user).Error; err != nil {
-					fmt.Println("Error: could not update user model")
-					return false
-				}
-				return true
-			} else {
-				fmt.Println("Enabled = false")
+			if !user.Enabled {
+				log.Println("[Auth] Unenabled user")
 				return false
 			}
-			return false
+			user.LastUseAt = time.Now()
+			if err := i.DB.Save(&user).Error; err != nil {
+				log.Println("Error: could not update user model")
+				return false
+			}
+			log.Println("[Auth] OK")
+			return true
 		}}
+}
+
+func main() {
+
+	// Prepare
+	log.Println("[Main] loading .env file")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("[Main] Error loading .env file")
+	}
+
+	log.Println("[Main] initilizing database")
+	i := Impl{}
+	i.InitDB()
+	i.InitSchema()
 
 	api := rest.NewApi()
 	api.Use(rest.DefaultDevStack...)
 
-	api.Use(&rest.CorsMiddleware{
-		RejectNonCorsRequests: false,
-		OriginValidator: func(origin string, request *rest.Request) bool {
-			return origin == "http://25.37.37.128:38080"
-		},
-		AllowedMethods: []string{"GET", "POST", "PUT"},
-		AllowedHeaders: []string{
-			"Accept", "Content-Type", "X-Custom-Header", "Origin"},
-		AccessControlAllowCredentials: true,
-		AccessControlMaxAge:           3600,
-	})
+	// CORS
+	if os.Getenv("ENABLE_CORS") == "true" {
+		allow_origin := os.Getenv("ALLOW_ORIGIN")
+		log.Println("[Main] allow host " + allow_origin)
+		SetCors(api, allow_origin)
+	}
 
+	// JWT Generator
+	jwt_middleware := GenerateJwtMiddleware(&i)
 	api.Use(&rest.IfMiddleware{
 		Condition: func(request *rest.Request) bool {
-			// return request.URL.Path != "/login"
-			return false
+			authRequest := request.URL.Path == "/auth"
+			userControlRequest := strings.HasPrefix(request.URL.Path, "/users")
+			return !(authRequest || userControlRequest)
 		},
 		IfTrue: jwt_middleware,
 	})
-	router, _ := rest.MakeRouter(
 
+	// Serve
+	router, _ := rest.MakeRouter(
 		rest.Get("/users", i.GetAllUsers),
 		rest.Post("/users", i.PostUser),
 		rest.Get("/users/:id", i.GetUser),
 		rest.Put("/users/:id", i.UpdateUser),
 		rest.Delete("/users/:id", i.DeleteUser),
-
-		rest.Post("/login", jwt_middleware.LoginHandler),
-		rest.Get("/auth_test", handle_auth),
-		rest.Get("/refresh_token", jwt_middleware.RefreshHandler),
+		rest.Post("/auth", jwt_middleware.LoginHandler),
+		rest.Get("/refresh", jwt_middleware.RefreshHandler),
 	)
 	api.SetApp(router)
-
 	http.Handle("/api/v1/", http.StripPrefix("/api/v1", api.MakeHandler()))
-
-	fmt.Println("Starting Server Port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := os.Getenv("SERVICE_PORT")
+	log.Println("[Main] Starting Server Port " + port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
