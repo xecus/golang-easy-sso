@@ -8,6 +8,10 @@
 
 $ cd <Repo>
 
+$ cp dot.env .env
+
+$ vi .env
+
 $ docker build -t golang-easy-sso ./
 
 $ docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -d postgres
