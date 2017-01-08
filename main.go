@@ -16,7 +16,7 @@ import (
 
 type User struct {
 	gorm.Model
-	Username  string    `gorm:"size:128" json:"username"`
+	Username  string    `gorm:"size:128;unique_index" json:"username"`
 	Password  string    `gorm:"size:128" json:"password"`
 	Enabled   bool      `json:"enabled"`
 	LastUseAt time.Time `json:"lastUseAt"`
