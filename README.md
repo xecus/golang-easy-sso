@@ -3,7 +3,6 @@
 > golang + postgres SQL
 
 ## Build Setup
-※準備中。まだ下記の手順では動かない
 
 ``` bash
 
@@ -17,7 +16,9 @@ $ docker build -t golang-easy-sso ./
 
 $ docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -d postgres
 
-$ docker run --rm -it -p 8080:8080 --link postgres golang-easy-sso
+$ export POSTGRES_CONTAINER_IP=$(docker inspect postgres | jq -r ".[].NetworkSettings.Networks.bridge.IPAddress")
+
+$ docker run --rm -it -e POSTGRES_HOST="$POSTGRES_CONTAINER_IP" -p 8080:8080 --link postgres:db golang-easy-sso
 
 ```
 
