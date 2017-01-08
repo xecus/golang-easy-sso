@@ -22,3 +22,64 @@ $ docker run --rm -it -e POSTGRES_HOST="$POSTGRES_CONTAINER_IP" -p 8080:8080 --l
 
 ```
 
+## How to use
+
+
+### Add user
+```bash
+
+$ curl \
+  -XPOST \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin", "password": "admin", "enabled": true}' \
+  http://127.0.0.1:8080/api/v1/users
+
+```
+
+### List user
+
+```bash
+
+$ curl http://127.0.0.1:8080/api/v1/users
+
+```
+
+### Show user detail
+
+```bash
+
+$ curl http://127.0.0.1:8080/api/v1/users/<ID>
+
+```
+
+### Update user Information
+
+```bash
+
+$ curl \
+  -XPUT \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin", "password": "admin", "enabled": false}' \
+  http://127.0.0.1:8080/api/v1/users/<ID>
+
+```
+
+### Delete User
+
+```bash
+
+$ curl -XDELETE http://127.0.0.1:8080/api/v1/users/<ID>
+
+```
+
+### Get JWT
+
+```bash
+
+$ curl \
+  -XPOST \
+  -H 'Content-Type: application/json' \
+  -d '{"username": "admin", "password": "admin"}' \
+  http://127.0.0.1:8080/api/v1/auth
+
+```
