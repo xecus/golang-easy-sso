@@ -3,6 +3,7 @@
 > golang + postgres SQL
 
 ## Build Setup
+※準備中。まだ下記の手順では動かない
 
 ``` bash
 
