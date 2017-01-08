@@ -1,0 +1,10 @@
+package: golang-easy-sso
+import:
+- package: github.com/StephanDollberg/go-json-rest-middleware-jwt
+- package: github.com/ant0ine/go-json-rest
+  subpackages:
+  - rest
+- package: github.com/jinzhu/gorm
+  subpackages:
+  - dialects/postgres
+- package: github.com/joho/godotenv

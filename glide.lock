@@ -1,0 +1,26 @@
+hash: 768bcf6992ceba4e1c00cf50cc433af20975f7e8070026397a99de88e010a7ab
+updated: 2017-01-08T21:10:41.843514826Z
+imports:
+- name: github.com/ant0ine/go-json-rest
+  version: ce4b71cdf7ba29ef443d704bd923f5bbf281ee30
+  subpackages:
+  - rest
+  - rest/trie
+- name: github.com/dgrijalva/jwt-go
+  version: a601269ab70c205d26370c16f7c81e9017c14e04
+- name: github.com/jinzhu/gorm
+  version: 5174cc5c242a728b435ea2be8a2f7f998e15429b
+  subpackages:
+  - dialects/postgres
+- name: github.com/jinzhu/inflection
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
+- name: github.com/joho/godotenv
+  version: 726cc8b906e3d31c70a9671c90a13716a8d3f50d
+- name: github.com/lib/pq
+  version: 8df6253d1317616f36b0c3740eb30c239a7372cb
+  subpackages:
+  - hstore
+  - oid
+- name: github.com/StephanDollberg/go-json-rest-middleware-jwt
+  version: be2a0500d9b32741c6823e55c27b4a79151272eb
+testImports: []
