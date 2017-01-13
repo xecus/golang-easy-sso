@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -133,6 +132,19 @@ func GenerateJwtMiddleware(i *Impl) *jwt.JWTMiddleware {
 		Timeout:    time.Hour,
 		MaxRefresh: time.Hour * 24,
 		Authenticator: func(username string, password string) bool {
+			enable_su := os.Getenv("ENABLE_SU")
+			su_user := os.Getenv("SU_USER")
+			su_password := os.Getenv("SU_PASSWORD")
+			if enable_su == "true" {
+				if username == su_user && password == su_password {
+					log.Println("[Auth] OK (SU)")
+					return true
+				} else {
+					log.Println("[Auth] NG (SU)")
+					return false
+				}
+			}
+
 			var user User
 			if err := i.DB.Where(&User{Username: username, Password: password}).First(&user).Error; err != nil {
 				log.Println("[Auth] unknown user")
@@ -181,8 +193,7 @@ func main() {
 	api.Use(&rest.IfMiddleware{
 		Condition: func(request *rest.Request) bool {
 			authRequest := request.URL.Path == "/auth"
-			userControlRequest := strings.HasPrefix(request.URL.Path, "/users")
-			return !(authRequest || userControlRequest)
+			return !authRequest
 		},
 		IfTrue: jwt_middleware,
 	})

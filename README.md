@@ -24,12 +24,25 @@ $ docker run --rm -it -e POSTGRES_HOST="$POSTGRES_CONTAINER_IP" -p 8080:8080 --l
 
 ## How to use
 
+### Get token for super user
 
-### Add user
 ```bash
 
 $ curl \
   -XPOST \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin", "password": "admin"}' \
+  http://127.0.0.1:8080/api/v1/auth
+
+```
+
+### Add user
+
+```bash
+
+$ curl \
+  -XPOST \
+  -H 'Authorization: Bearer <TOKEN>' \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin", "password": "admin", "enabled": true}' \
   http://127.0.0.1:8080/api/v1/users
@@ -40,7 +53,9 @@ $ curl \
 
 ```bash
 
-$ curl http://127.0.0.1:8080/api/v1/users
+$ curl \
+  -H 'Authorization: Bearer <TOKEN>' \
+  http://127.0.0.1:8080/api/v1/users
 
 ```
 
@@ -48,7 +63,9 @@ $ curl http://127.0.0.1:8080/api/v1/users
 
 ```bash
 
-$ curl http://127.0.0.1:8080/api/v1/users/<ID>
+$ curl \
+  -H 'Authorization: Bearer <TOKEN>' \
+  http://127.0.0.1:8080/api/v1/users/<ID>
 
 ```
 
@@ -58,6 +75,7 @@ $ curl http://127.0.0.1:8080/api/v1/users/<ID>
 
 $ curl \
   -XPUT \
+  -H 'Authorization: Bearer <TOKEN>' \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin", "password": "admin", "enabled": false}' \
   http://127.0.0.1:8080/api/v1/users/<ID>
@@ -68,7 +86,9 @@ $ curl \
 
 ```bash
 
-$ curl -XDELETE http://127.0.0.1:8080/api/v1/users/<ID>
+$ curl \
+  -H 'Authorization: Bearer <TOKEN>' \
+  -XDELETE http://127.0.0.1:8080/api/v1/users/<ID>
 
 ```
 
