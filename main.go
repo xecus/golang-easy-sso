@@ -118,7 +118,7 @@ func SetCors(api *rest.Api, allow_origin string) {
 		},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders: []string{
-			"Accept", "Content-Type", "X-Custom-Header", "Origin"},
+			"Accept", "Content-Type", "X-Custom-Header", "Origin", "Authorization"},
 		AccessControlAllowCredentials: true,
 		AccessControlMaxAge:           3600,
 	})
@@ -139,9 +139,6 @@ func GenerateJwtMiddleware(i *Impl) *jwt.JWTMiddleware {
 				if username == su_user && password == su_password {
 					log.Println("[Auth] OK (SU)")
 					return true
-				} else {
-					log.Println("[Auth] NG (SU)")
-					return false
 				}
 			}
 
