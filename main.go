@@ -15,8 +15,9 @@ import (
 
 type User struct {
 	gorm.Model
-	Username  string    `gorm:"size:128;unique_index" json:"username"`
-	Password  string    `gorm:"size:128" json:"password"`
+	Username  string    `gorm:"size:128;not null;unique;index" json:"username"`
+	Password  string    `gorm:"size:128;not null" json:"password"`
+	Data      string    `gorm:"size:1024" json:"data"`
 	Enabled   bool      `json:"enabled"`
 	LastUseAt time.Time `json:"lastUseAt"`
 }
@@ -86,9 +87,12 @@ func (i *Impl) UpdateUser(w rest.ResponseWriter, r *rest.Request) {
 		rest.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	user.Username = updated.Username
 	user.Password = updated.Password
+	user.Data = updated.Data
 	user.Enabled = updated.Enabled
+
 	if err := i.DB.Save(&user).Error; err != nil {
 		rest.Error(w, err.Error(), http.StatusInternalServerError)
 		return
